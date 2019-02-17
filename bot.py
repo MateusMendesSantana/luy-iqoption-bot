@@ -21,13 +21,15 @@ from strategies.rsi_stoch import RSIStoch
 from risk_management.b import B
 import configuration as config
 import math
+from promise import Promise
 from active import Active
 from api.buy import Buy
+from api.dispacher import Dispacher
 
 class Bot(Thread):
 
-    def __init__(self, profile, api, active: Active, check_in_period=.2):
-        self.buy = Buy(api)
+    def __init__(self, profile, api, dispacher: Dispacher, active: Active, check_in_period=.2):
+        self.buy = Buy(api.api, dispacher)
         self.profile = profile
         self.api = api
         self.active = active
@@ -100,10 +102,10 @@ class Bot(Thread):
             entry = self.risk_management.get_next_entry(self.active.profit)
             money = max(config.OPERATION_MONEY * entry, 1)
             action = 'call' if probability > 0 else 'put'
-            self.id_number = self.do_buy(money, action)
+            promise: Promise = self.do_buy(money, action)
 
-            if(self.id_number):
-                self.last_buy = time.time()
+            promise.then(self.on_sucess_buy)
+            promise.catch(self.on_failed_buy)
 
 
     def get_candles(self):
@@ -122,15 +124,20 @@ class Bot(Thread):
             return mean(probabilities)
 
     def do_buy(self, money, action, expirations_mode=1):
-        check, id_number = self.profile.buy(money, self.active.name, action, expirations_mode)
+        self.last_buy = time.time()
+        return self.buy(money, self.active.code, action, expirations_mode)
 
-        print('{} to buy {}, action {}, money ${}'.format(
-            'success' if check else 'failed',
-            self.active.name,
-            action,
-            money)
-        )
-        return id_number
+    def on_sucess_buy(self, result: dict):
+        self.last_buy = time.time()
+        print(self.get_buy_message('success', self.active.name, result['action'], result['money']))
+
+    def on_failed_buy(self):
+        print(self.get_buy_message('success', self.active.name, '', ''))
+
+    def get_buy_message(self, status, active_name, action, money):
+        message = '{} to buy {}, action {}, money ${}'
+
+        return message.format(status, active_name, action, money)
 
     def stop_stream(self):
         try:

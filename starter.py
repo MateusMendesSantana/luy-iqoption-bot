@@ -9,13 +9,13 @@ from operator import itemgetter, attrgetter, methodcaller
 import configuration as config
 from bot import Bot
 from active import Active
+from api.dispacher import Dispacher
 
 
 class Start:
     def __init__(self):
         self.api = IQ_Option(config.USERNAME, config.PASSWORD)
-        self.api.operations = {}
-        self.api.api.websocket.on_message = self.on_message
+        self.dispacher = Dispacher(self.api.api)
         self.api.change_balance(config.MODE)
         self.bots = []
         self.actives = []
@@ -49,7 +49,7 @@ class Start:
                 break
 
             self.api.start_candles_stream(active.name, config.CANDLE_SIZE, config.MAX_CANDLES)
-            bot = Bot(self, self.api, active)
+            bot = Bot(self, self.api, self.dispacher, active)
             self.bots.append(bot)
             bot.start()
 
@@ -121,10 +121,11 @@ class Start:
             logging.error('**error** start_candles_stream please input right size')
 
     def is_desconected(self):
-        if not self.api.timesync:
+        return False
+        if not self.api.api.timesync:
             return False
         
-        idle_time = abs(self.api.timesync.server_timestamp - time.time())
+        idle_time = abs(self.api.api.timesync.server_timestamp - time.time())
 
         return idle_time > 6
 
@@ -157,15 +158,6 @@ class Start:
             return True, api.buy_id
         else:
             return False, None
-
-    def on_message(self, websocket, message):
-        msg = json.loads(str(message))
-
-        if msg["name"] == "buyComplete":
-            if msg["msg"]["isSuccessful"]:
-                result = msg["msg"]["result"]
-                self.api.operations[result['id']] = result
-        self.api.api.websocket_client.on_message(websocket, message)
 
 
 if __name__ == "__main__":

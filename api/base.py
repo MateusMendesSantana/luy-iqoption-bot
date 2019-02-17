@@ -1,11 +1,10 @@
-"""Module for base IQ Option base websocket chanel."""
+from iqoptionapi.api import IQOptionAPI
+from api.dispacher import Dispacher
 
 
 class Base(object):
-    """Class for base IQ Option websocket chanel."""
-    # pylint: disable=too-few-public-methods
 
-    def __init__(self, api, dispacher: Dispacher):
+    def __init__(self, api: IQOptionAPI, dispacher: Dispacher):
         """
         :param api: The instance of :class:`IQOptionAPI
             <iqoptionapi.api.IQOptionAPI>`.
