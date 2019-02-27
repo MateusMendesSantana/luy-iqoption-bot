@@ -51,7 +51,7 @@ class Buy(Base):
             option = "turbo"
             # Round to next full minute
             # datetime.datetime.now().second>30
-            if (exp % 60) > 30:
+            if (exp % 60) > 25:
                 duration += 1
 
             exp = exp - (exp % 60) + (60 * duration)

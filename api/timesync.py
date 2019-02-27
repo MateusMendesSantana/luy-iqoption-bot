@@ -1,6 +1,7 @@
 import time
 import datetime
 import threading
+from datetime import datetime
 
 from api.base import Base
 from api.dispacher import Dispacher
@@ -18,4 +19,14 @@ class TimeSync(Base):
 
     def on_data(self, message):
         self.timestamp = message["msg"] / 1000
-        print('{} - {}'.format(int(time.time() - self.timestamp), threading.currentThread().getName()))
+        ts = int(time.time())
+        if (ts % 60) > 25:
+            duration = 2
+        else: 
+            duration = 1
+
+        ts = ts - (ts % 60) + (60 * duration)
+
+        print('{} {} - {}'.format(datetime.fromtimestamp(ts).minute,
+            int(time.time() - self.timestamp),
+            threading.currentThread().getName()))
