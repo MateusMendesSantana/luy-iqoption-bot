@@ -8,7 +8,7 @@ TIME_RECONNECT = 10 #seconds
 OPERATION_TIME = 60
 OPERATION_MONEY = 1
 # OPERATION_MONEY = .03 # 0-1 (0-100%), operar com quantos porcento da banca por operação?
-OPERATION_WHEN_PROFIT = .7 # 0-1 (0-100%), operar ativos que estão com que porcentagem de ganho?
+OPERATION_WHEN_PROFIT = .5 # 0-1 (0-100%), operar ativos que estão com que porcentagem de ganho?
 OPERATION_WHEN_WIN = .8 # 0-1 (0-100%), operar com quantos porcento de chance de ganhar?
 
 MAX_BOTS = 5

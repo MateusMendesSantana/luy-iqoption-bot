@@ -93,3 +93,7 @@ class Candle:
             (self.shadow / self.body_size) < .5
         )
 
+    def is_doji(self):
+        return self.force == 0
+
+

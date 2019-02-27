@@ -1,6 +1,8 @@
 from events import Events
 import json
 from iqoptionapi.api import IQOptionAPI
+import time
+import threading
 
 class Dispacher(Events):
     operations = [
@@ -46,4 +48,7 @@ class Dispacher(Events):
 
         message = json.loads(str(message))
 
-        locals()[message['name']](message)
+        if message['name'] in self.__events__:
+            getattr(self, message['name'])(message)
+        else:
+            print(message['name'])

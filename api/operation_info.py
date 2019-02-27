@@ -3,20 +3,21 @@ from api.dispacher import Dispacher
 import datetime
 import time
 from api.base import Base
-from promise import Promise
 import logging
+from api.timesync import TimeSync
 
 
 class OperationInfo(Base):
 
     name = "api_game_betinfo"
 
-    def __init__(self, api: IQOptionAPI, dispacher: Dispacher):
-        super.__init__(api, dispacher)
-        self.promise: Promise = None
+    def __init__(self, api: IQOptionAPI, dispacher: Dispacher, timesync: TimeSync):
+        super().__init__(api, dispacher, timesync)
+        self.clear()
         self.dispacher.api_game_betinfo_result+= self.on_result
 
-    def __call__(self, id_number_list):
+    def __call__(self, id_number_list, timeout = 90):
+        self.clear()
         data = {"currency": "USD"}
 
         if type(id_number_list) is list:
@@ -28,15 +29,18 @@ class OperationInfo(Base):
             data["id[0]"] = int(id_number_list)
 
         self.send_websocket_request(self.name, data)
-        self.promise = Promise()
+        start = time.time()
 
-        return self.promise()
+        while True:
+            if time.time() - start > timeout or self.is_desconected():
+                return False, None
+            elif self.success == True:
+                return self.success, self.result
+
+    def clear(self):
+        self.result = None
+        self.success = None
 
     def on_result(self, message):
-        try:
-            if message["msg"]["isSuccessful"]:
-                self.promise.resolve(message)
-            else:
-                self.promise.reject(message)
-        except:
-            self.promise.reject(message)
+        self.success = message["msg"]["isSuccessful"]
+        self.result = message["msg"]["result"]

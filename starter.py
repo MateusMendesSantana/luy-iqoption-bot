@@ -10,6 +10,8 @@ import configuration as config
 from bot import Bot
 from active import Active
 from api.dispacher import Dispacher
+from api.timesync import TimeSync
+import threading
 
 
 class Start:
@@ -17,6 +19,7 @@ class Start:
         self.api = IQ_Option(config.USERNAME, config.PASSWORD)
         self.dispacher = Dispacher(self.api.api)
         self.api.change_balance(config.MODE)
+        self.timesync = TimeSync(self.api, self.dispacher)
         self.bots = []
         self.actives = []
         
@@ -24,7 +27,7 @@ class Start:
         self.create_bots()
 
         while True:
-            if self.is_desconected():
+            if self.timesync.is_desconected():
                 self.stop_bots()
                 print('disconnected trying to reconnect in {} seconds'.format(config.TIME_RECONNECT))
                 time.sleep(config.TIME_RECONNECT)
@@ -33,7 +36,7 @@ class Start:
                     print('successfully reconnected')
                     self.create_bots()
 
-            time.sleep(1)
+            time.sleep(.3)
 
     def stop_bots(self):
         for bot in self.bots:
@@ -48,8 +51,7 @@ class Start:
             if index >= config.MAX_BOTS:
                 break
 
-            self.api.start_candles_stream(active.name, config.CANDLE_SIZE, config.MAX_CANDLES)
-            bot = Bot(self, self.api, self.dispacher, active)
+            bot = Bot(self, self.api, self.dispacher, self.timesync, active)
             self.bots.append(bot)
             bot.start()
 
@@ -119,15 +121,6 @@ class Start:
             self.api.start_candles_one_stream(ACTIVE,size)
         else:
             logging.error('**error** start_candles_stream please input right size')
-
-    def is_desconected(self):
-        return False
-        if not self.api.api.timesync:
-            return False
-        
-        idle_time = abs(self.api.api.timesync.server_timestamp - time.time())
-
-        return idle_time > 6
 
     def get_all_init(self):
         self.api.api.api_option_init_all_result = None

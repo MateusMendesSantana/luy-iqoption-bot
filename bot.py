@@ -25,11 +25,16 @@ from promise import Promise
 from active import Active
 from api.buy import Buy
 from api.dispacher import Dispacher
+from api.operation_info import OperationInfo
+from api.list_info_data import ListInfoData
+from api.timesync import TimeSync
 
 class Bot(Thread):
 
-    def __init__(self, profile, api, dispacher: Dispacher, active: Active, check_in_period=.2):
-        self.buy = Buy(api.api, dispacher)
+    def __init__(self, profile, api, dispacher: Dispacher, timesync: TimeSync, active: Active, check_in_period=.2):
+        self.buy = Buy(api.api, dispacher, timesync)
+        self.operation_info = OperationInfo(api.api, dispacher, timesync)
+        self.list_info_data = ListInfoData(api.api, dispacher, timesync)
         self.profile = profile
         self.api = api
         self.active = active
@@ -40,7 +45,6 @@ class Bot(Thread):
         self.do_stop = False
 
         self.check_time = time.time()
-        self.check_win_time = time.time()
 
         self.id_number = None
         self.last_buy = 0
@@ -69,25 +73,19 @@ class Bot(Thread):
         super(Bot, self).__init__()
 
     def run(self):
+        self.api.start_candles_stream(self.active.name, self.candle_size, self.max_candles)
+
         while not self.do_stop:
             if time.time() >= self.check_time:
                 self.check_time = time.time() + self.check_in_period
 
                 if not self.active.enabled or not self.active.is_profitable():
                     self.stop()
-                elif not self.in_buy():
-                    if self.id_number:
-                        if time.time() > self.check_win_time:
-                            self.check_win_time = time.time() + 1
-                            self.check_win(self.id_number)
-                    else:
-                        self.check()
+                else:
+                    self.check()
 
         self.stop_stream()
         print('Stop Robot {}, {}'.format(self.active.name, self.active.enabled))
-
-    def in_buy(self):
-        return time.time() < self.last_buy + config.OPERATION_TIME
 
     def check(self):
         candles = self.get_candles()
@@ -102,11 +100,14 @@ class Bot(Thread):
             entry = self.risk_management.get_next_entry(self.active.profit)
             money = max(config.OPERATION_MONEY * entry, 1)
             action = 'call' if probability > 0 else 'put'
-            promise: Promise = self.do_buy(money, action)
+            check, result = self.buy(money, self.active.code, action)
 
-            promise.then(self.on_sucess_buy)
-            promise.catch(self.on_failed_buy)
+            message = self.get_buy_message(check, action, money)
+            print(message)
 
+            if(check):
+                self.last_buy = time.time()
+                self.check_win()
 
     def get_candles(self):
         candles: list = self.api.get_realtime_candles(
@@ -123,48 +124,31 @@ class Bot(Thread):
         else:
             return mean(probabilities)
 
-    def do_buy(self, money, action, expirations_mode=1):
-        self.last_buy = time.time()
-        return self.buy(money, self.active.code, action, expirations_mode)
-
-    def on_sucess_buy(self, result: dict):
-        self.last_buy = time.time()
-        print(self.get_buy_message('success', self.active.name, result['action'], result['money']))
-
-    def on_failed_buy(self):
-        print(self.get_buy_message('success', self.active.name, '', ''))
-
-    def get_buy_message(self, status, active_name, action, money):
+    def get_buy_message(self, success, action, money):
         message = '{} to buy {}, action {}, money ${}'
+        status = 'success' if success else 'failed'
 
-        return message.format(status, active_name, action, money)
+        return message.format(status, self.active.name, action, money)
 
     def stop_stream(self):
         try:
             self.api.stop_candles_stream(self.active.name, config.CANDLE_SIZE)
         except:
-            return
+            pass
 
-    def check_win(self, id_number):
-        if id_number in self.api.api.listinfodata.listinfodata_dict:
-            listinfodata_dict = self.api.api.listinfodata.get(id_number)
+    def check_win(self):
+        result = self.list_info_data(self.buy.id)
+        
+        if result != None:
+            if result == 'win':
+                self.risk_management.add_win()
+            elif result == 'loose':
+                self.risk_management.add_loose()
 
-            if listinfodata_dict["game_state"] == 1:
-                self.api.api.listinfodata.delete(id_number)
-                ans = listinfodata_dict["win"] # win loose equal
+            print('{} operation {}: {}'.format(result, self.active.name, self.buy.id))
+        else:
+            print('error {}({}) was not possible to verify status'.format(self.active.name, self.buy.id))
 
-                if(ans):
-                    if ans == 'win':
-                        self.risk_management.add_win()
-                    elif ans == 'loose':
-                        self.risk_management.add_loose()
-
-                    print('{} operation {}: {}'.format(ans, self.active.name, self.id_number))
-                    self.id_number = None
-                else:
-                    print('error {}({}) was not possible to verify win'.format(self.active.name, self.id_number))
-                    self.id_number = None
-    
     def stop(self):
         self.do_stop = True
 

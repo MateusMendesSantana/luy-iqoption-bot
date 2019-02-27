@@ -22,6 +22,12 @@ class RSIStoch:
 
         if (purchase_time <= 10):
             candles = self.graphic_analysis.candles
+
+            rev = list(reversed(candles))
+
+            if(rev[0].is_doji() or rev[1].is_doji() or rev[2].is_doji() or rev[3].is_doji()):
+                return 0
+
             # open = array(list(map(lambda x: x.open, candles)))
             close = array(list(map(lambda x: x.close, candles)))
             high = array(list(map(lambda x: x.max, candles)))
