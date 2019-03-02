@@ -51,6 +51,7 @@ class Start:
             if index >= config.MAX_BOTS:
                 break
 
+            self.api.start_candles_stream(active.name, config.CANDLE_SIZE, config.MAX_CANDLES)
             bot = Bot(self, self.api, self.dispacher, self.timesync, active)
             self.bots.append(bot)
             bot.start()
@@ -97,7 +98,10 @@ class Start:
 
     def reconnect(self):
         try:
-            return self.api.api.connect()
+            self.api.api.close()
+            result = self.api.api.connect()
+            self.api.api.websocket.on_message = self.dispacher.on_message
+            return result
         except:
             print('fail to reconnect')
 

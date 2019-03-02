@@ -73,16 +73,13 @@ class Bot(Thread):
         super(Bot, self).__init__()
 
     def run(self):
-        self.api.start_candles_stream(self.active.name, self.candle_size, self.max_candles)
-
         while not self.do_stop:
-            if time.time() >= self.check_time:
-                self.check_time = time.time() + self.check_in_period
+            time.sleep(self.check_in_period)
 
-                if not self.active.enabled or not self.active.is_profitable():
-                    self.stop()
-                else:
-                    self.check()
+            if not self.active.enabled or not self.active.is_profitable():
+                self.stop()
+            else:
+                self.check()
 
         self.stop_stream()
         print('Stop Robot {}, {}'.format(self.active.name, self.active.enabled))
