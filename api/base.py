@@ -13,5 +13,5 @@ class Base(object):
         return self.api.send_websocket_request(name, msg)
 
     def is_desconected(self):
-        return abs(self.timesync.timestamp - time.time()) > 6
+        return abs(self.timesync.timestamp - time.time()) > 10
 
