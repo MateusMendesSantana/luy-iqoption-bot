@@ -18,7 +18,7 @@ class Buy(Base):
         self.clear()
         self.dispacher.buyComplete += self.on_complete
 
-    def __call__(self, price, active, direction, duration=1, timeout=30):
+    def __call__(self, price, active, direction, duration=1, timeout=20):
         self.clear()
         self.active = active
 
@@ -51,7 +51,7 @@ class Buy(Base):
             option = "turbo"
             # Round to next full minute
             # datetime.datetime.now().second>30
-            if (exp % 60) > 25:
+            if (exp % 60) > 27:
                 duration += 1
 
             exp = exp - (exp % 60) + (60 * duration)
