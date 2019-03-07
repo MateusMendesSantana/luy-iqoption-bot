@@ -8,14 +8,13 @@ class Martingale:
         self.reset()
 
     def add_loose(self):
-        self.entry+= self.entry
+        self.losses+= 1
 
-        if self.entry == 4:
+        if self.losses == 4:
             self.reset()
 
     def get_next_entry(self, profit: float):
-        return math.pow(1.0 / profit, self.entry)
+        return math.pow(2, self.losses)
 
     def reset(self):
-        self.entry = 1
         self.losses = 0

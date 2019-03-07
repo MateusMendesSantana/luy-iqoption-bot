@@ -11,10 +11,10 @@ OPERATION_MONEY = 1
 OPERATION_WHEN_PROFIT = .5 # 0-1 (0-100%), operar ativos que estão com que porcentagem de ganho?
 OPERATION_WHEN_WIN = .8 # 0-1 (0-100%), operar com quantos porcento de chance de ganhar?
 
-MAX_BOTS = 5
+MAX_BOTS = 2
 
-CANDLE_SIZE = 15 #seconds
-MAX_CANDLES = int(10 * 60 / CANDLE_SIZE)
+CANDLE_SIZE = 60 #seconds
+MAX_CANDLES = int(15 * 60 / CANDLE_SIZE)
 
 
 SHORT_CANDLE = .3 # %, considerar todas as velas com o corpo n% abaixo da media, velas curtas

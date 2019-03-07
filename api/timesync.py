@@ -27,6 +27,6 @@ class TimeSync(Base):
 
         ts = ts - (ts % 60) + (60 * duration)
 
-        print('{} {} - {}'.format(datetime.fromtimestamp(ts).minute,
+        """ print('{} {} - {}'.format(datetime.fromtimestamp(ts).minute,
             int(time.time() - self.timestamp),
-            threading.currentThread().getName()))
+            threading.currentThread().getName())) """

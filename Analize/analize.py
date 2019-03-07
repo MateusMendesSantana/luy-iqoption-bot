@@ -7,54 +7,40 @@ from iqoptionapi.stable_api import IQ_Option
 import iqoptionapi.constants as OP_code
 from operator import itemgetter, attrgetter, methodcaller
 import configuration as config
-from bot import Bot
 from active import Active
 from api.dispacher import Dispacher
 from api.timesync import TimeSync
+from candle import Candle
 import threading
 
 
-class Start:
+class Analize:
     def __init__(self):
         self.api = IQ_Option(config.USERNAME, config.PASSWORD)
         self.dispacher = Dispacher(self.api.api)
         self.api.change_balance(config.MODE)
         self.timesync = TimeSync(self.api, self.dispacher)
-        self.bots = []
         self.actives = []
         
         self.generate_actives()
-        self.create_bots()
 
-        while True:
-            if self.timesync.is_desconected():
-                self.stop_bots()
-                print('disconnected trying to reconnect in {} seconds'.format(config.TIME_RECONNECT))
-                time.sleep(config.TIME_RECONNECT)
+        acts: list = self.get_operable_actives()
 
-                if(self.reconnect()):
-                    print('successfully reconnected')
-                    self.create_bots()
+        for index, active in enumerate(acts):
+            candles: list = list(reversed(self.api.api.getcandles(active.code, 1, 10000, time.time())))
 
-            time.sleep(.3)
+            for index, candle in candles:
+                if index < len(candles) - 10:
+                    candle: Candle = candle
+                    
+                    win = 0
+                    losses = 0
 
-    def stop_bots(self):
-        for bot in self.bots:
-            if bot:
-                bot.stop()
+                    if candles[index + 1].direction + candles[index + 2].direction + candles[index + 3].direction
+                        pass
 
-    def create_bots(self):
-        self.bots = []
-        actives = self.get_operable_actives()
-        
-        for index, active in enumerate(actives):
-            if index >= config.MAX_BOTS:
-                break
 
-            self.api.start_candles_stream(active.name, config.CANDLE_SIZE, config.MAX_CANDLES)
-            bot = Bot(self, self.api, self.dispacher, self.timesync, active)
-            self.bots.append(bot)
-            bot.start()
+
 
     def get_balance(self):
         while True:
@@ -64,7 +50,7 @@ class Start:
                 if(respon["isSuccessful"] == True):
                     return respon["result"]["balance"]
             except:
-                self.reconnect()
+                pass
       
             time.sleep(.5)
 
@@ -96,23 +82,6 @@ class Start:
     def sort_actives(self):
         self.actives = sorted(self.actives, key=attrgetter('profit'), reverse=True)
 
-    def reconnect(self):
-        try:
-            self.api.api.close()
-            result = self.api.api.connect()
-            self.api.api.websocket.on_message = self.dispacher.on_message
-            return result
-        except:
-            print('fail to reconnect')
-
-    def start_candles_stream(self, ACTIVE, size, maxdict):
-        if size in self.api.size:
-            self.api.api.real_time_candles_maxdict_table[ACTIVE][size] = maxdict
-            self.api.full_realtime_get_candle(ACTIVE,size,maxdict)
-            self.api.start_candles_one_stream(ACTIVE,size)
-        else:
-            logging.error('**error** start_candles_stream please input right size')
-
     def get_all_init(self):
         self.api.api.api_option_init_all_result = None
         try:
@@ -131,5 +100,5 @@ class Start:
 
 
 if __name__ == "__main__":
-    global start
-    start = Start()
+    global analize
+    analize = Analize()

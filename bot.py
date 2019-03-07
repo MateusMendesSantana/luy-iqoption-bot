@@ -18,6 +18,7 @@ from strategies.second_otc import SecondOtc
 from candle_chart import CandleChart
 from strategies.simple_rsi import SimpleRSI
 from strategies.rsi_stoch import RSIStoch
+from strategies.patter_m1 import PatternM1
 from risk_management.b import B
 import configuration as config
 import math
@@ -28,6 +29,7 @@ from api.dispacher import Dispacher
 from api.operation_info import OperationInfo
 from api.list_info_data import ListInfoData
 from api.timesync import TimeSync
+from risk_management.matingale import Martingale
 
 class Bot(Thread):
 
@@ -41,7 +43,8 @@ class Bot(Thread):
         self.candle_size = config.CANDLE_SIZE
         self.max_candles = config.MAX_CANDLES
         self.check_in_period = check_in_period
-        self.risk_management: B = B()
+        # self.risk_management: B = B()
+        self.risk_management: Martingale = Martingale()
         self.do_stop = False
 
         self.check_time = time.time()
@@ -58,7 +61,8 @@ class Bot(Thread):
         # first_otc = FirstOtc(api, active, self.graphic_analysis)
         # simple_rsi = SimpleRSI(api, active, self.graphic_analysis)
         # second_otc = SecondOtc(api, active, self.graphic_analysis)
-        rsi_stoch = RSIStoch(api, active, self.graphic_analysis)
+        # rsi_stoch = RSIStoch(api, active, self.graphic_analysis)
+        petternM1 = PatternM1(api, active, self.graphic_analysis)
 
         self.strategies = []
         # self.strategies.append(dark_cloud)
@@ -67,7 +71,8 @@ class Bot(Thread):
         # self.strategies.append(first_otc)
         # self.strategies.append(second_otc)
         # self.strategies.append(simple_rsi)
-        self.strategies.append(rsi_stoch)
+        # self.strategies.append(rsi_stoch)
+        self.strategies.append(petternM1)
 
         print('Robo {} criado.'.format(active.name))
         super(Bot, self).__init__()
