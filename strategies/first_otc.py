@@ -28,8 +28,8 @@ class FirstOtc:
             low = array(list(map(lambda x: x.min, candles)))
             # volume = array(list(map(lambda x: x.volume, candles)))
 
-            rsi: list = ta.RSI(close, timeperiod=4).reverse()
-            cci: list = ta.CCI(high, low, close, timeperiod=4).reverse()
+            rsi: list = list(reversed(ta.RSI(close, timeperiod=4)))
+            cci: list = list(reversed(ta.CCI(high, low, close, timeperiod=4)))
 
             if (rsi[0] > 90 and cci[0] > 100):
                 return -1
