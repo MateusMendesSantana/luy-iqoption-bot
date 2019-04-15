@@ -1,5 +1,5 @@
-USERNAME = 'mateusmendessantana@hotmail.com'
-PASSWORD = 'V8DRLuReSanpGur'
+USERNAME = 'YOUR_EMAIL'
+PASSWORD = 'YOUR_PASS'
 MODE = 'PRACTICE' # REAL PRACTICE
 
 TIME_RECONNECT = 10 #seconds
