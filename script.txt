@@ -1,0 +1,4 @@
+obter codigo de todos os ativos binarios
+instanciar bot para cada ativo
+observar tendencias
+obter aval dos sinais para operação
